@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #490665;
+  color: #ffffff;
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-brand-surface/40 backdrop-blur-xl border border-brand-border/50;
+  }
+  .neon-glow {
+    box-shadow: 0 0 15px rgba(229, 20, 163, 0.4);
+  }
+  .neon-glow-hover:hover {
+    box-shadow: 0 0 25px rgba(249, 109, 234, 0.6);
+  }
+}
