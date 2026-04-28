@@ -64,25 +64,25 @@ In IntelliCore, **Retrieval-Augmented Generation (RAG)** is the engine that tran
 
 Here is the structural breakdown of the RAG pipeline:
 
-### 1. The Multi-Modal Ingestion Pipeline
+### I. The Multi-Modal Ingestion Pipeline
 Before an agent can search for information, the data must be prepared. This happens in three stages:
 
 *   **Extraction (Text & Vision):** The system uses `PyMuPDF` for standard text. For complex elements like **charts, tables, and diagrams**, it uses **Llama 3.2 Vision** to interpret the visual data and convert it into a detailed textual description.
 *   **Chunking:** Large documents are broken into smaller, overlapping "chunks" (typically 500-1000 characters). This ensures that the context isn't lost at the edges of a paragraph.
 *   **Vectorization:** Each chunk is passed through an embedding model (`all-MiniLM-L6-v2`). This converts human language into a **768-dimensional mathematical vector** that represents its semantic meaning.
 
-### 2. Semantic Storage (ChromaDB)
+### II. Semantic Storage (ChromaDB)
 The generated vectors are stored in **ChromaDB**, a specialized vector database. 
 *   **Indexing:** Instead of searching for keywords (like "vacation"), the database looks for "mathematical proximity." 
 *   **Speed:** Even with thousands of pages, the vector store can find the most relevant chunks in under 100 milliseconds.
 
-### 3. The Retrieval Process
+### III. The Retrieval Process
 When a query enters the system, the **Searcher Agent** executes the following:
 1.  **Query Embedding:** The user's question (e.g., "What is the travel policy for Mumbai?") is converted into a vector using the same model used for the documents.
 2.  **Similarity Search:** The system calculates the "Cosine Similarity" between the question vector and all document vectors in the database.
 3.  **Top-K Fetching:** It retrieves the top 10 most relevant chunks based on their similarity score.
 
-### 4. Augmented Generation (Groundedness)
+### IV. Augmented Generation (Groundedness)
 This is where the "Augmented" part comes in. The retrieved chunks are injected into the LLM prompt as **context**.
 
 **The Prompt Structure:**
@@ -92,7 +92,7 @@ This is where the "Augmented" part comes in. The retrieved chunks are injected i
 > 
 > **Question:** "What is the travel policy for Mumbai?"
 
-### 5. Multi-Modal Retrieval (Vision Integration)
+### V. Multi-Modal Retrieval (Vision Integration)
 A unique feature of IntelliCore's RAG is its ability to "see" documents. 
 *   If a policy contains a **flowchart** for approval processes, the Vision AI has already described that flowchart in text. 
 *   When you ask "Who approves my travel?", the RAG system retrieves the *textual description of that flowchart*, allowing the LLM to explain a visual process as if it were reading text.
@@ -102,18 +102,18 @@ In IntelliCore, the **Model Context Protocol (MCP)** is used as an architectural
 
 Following MCP principles ensures that the agentic framework remains modular, extensible, and model-agnostic.
 
-### 1. The Core Philosophy: Decoupling
+### I. The Core Philosophy: Decoupling
 The primary goal of MCP in this system is to separate **what** the model wants to do from **how** it is actually done. 
 *   **The LLM:** Acts as the orchestrator. It knows it needs to "retrieve information" or "summarize text."
 *   **The MCP Layer:** Provides a standardized interface for these actions. The LLM doesn't need to know how to talk to ChromaDB or handle PDF parsing; it just calls the `Retriever` tool.
 
-### 2. The Standardized Tool Registry
+### II. The Standardized Tool Registry
 All system capabilities are centralized in `backend/mcp/tools.py`. Each tool is registered with a consistent schema, which includes:
 *   **Name:** Unique identifier (e.g., `Retriever`, `Vision`, `Analyzer`).
 *   **Description:** A clear natural language explanation that tells the LLM *when* to use the tool.
 *   **Input Schema:** Strict definition of what data the tool expects (e.g., a `query` string or a list of `documents`).
 
-### 3. Tool Implementation (The "MCP Tools")
+### III. Tool Implementation (The "MCP Tools")
 The system implements several key MCP tools that the agents can invoke:
 
 | Tool | Role | Implementation Detail |
@@ -124,14 +124,14 @@ The system implements several key MCP tools that the agents can invoke:
 | **Vision Analyzer** | Visual Interpretation | Processes visual traces and charts from documents. |
 | **Report Generator** | Content Formatting | Converts raw analysis into professional Markdown reports. |
 
-### 4. Operational Flow (The Protocol in Action)
+### IV. Operational Flow (The Protocol in Action)
 When an agent (like the **Writer Agent**) needs to perform an action, it follows the MCP workflow:
 1.  **Selection:** Based on the user's query, the agent identifies which tool in the registry is most appropriate.
 2.  **Invocation:** The agent sends the required parameters (context, query) to the tool.
 3.  **Standardized Response:** The tool returns a structured JSON object containing the `output` and `metadata` (like confidence scores or match metrics).
 4.  **State Update:** The agent takes this output and updates the **Global Agent State**, making the result available to subsequent agents in the graph.
 
-### 5. Benefits of the MCP Approach
+### V. Benefits of the MCP Approach
 *   **Extensibility:** Adding a new capability (e.g., a "Slack Notification" tool) simply requires adding one function to the registry. The core agent logic remains untouched.
 *   **Model Agnostic:** Because the tools are standardized, you can swap out the underlying LLM (e.g., from Groq/Llama to OpenAI/GPT-4o) without rewriting any data access logic.
 *   **Observability:** Since every interaction follows the same protocol, the system can log every tool call, input, and output in a uniform format for the **Administrator Dashboard**.
@@ -141,10 +141,10 @@ The agentic framework in IntelliCore is built using LangGraph, providing a state
 
 Here is a breakdown of how the framework operates:
 
-1. The Orchestration Layer (LangGraph)
+I. The Orchestration Layer (LangGraph)
 The core logic resides in backend/mcp/langgraph_orchestrator.py. Instead of a simple linear pipeline, it uses a State Graph that allows the system to loop back and correct itself if an error or "hallucination" is detected.
 
-2. The Specialist Agents
+II. The Specialist Agents
 The framework divides the workload among four specialized "agents" (nodes in the graph):
 
 🛡️ Gatekeeper (Safety Agent): The first line of defense. It checks the user's query against safety guardrails (defined in guardrails.py) to block restricted requests (e.g., asking for confidential salaries or passwords).
@@ -154,7 +154,7 @@ QA: For specific questions.
 Summarizer: For "Summarize X" requests.
 Analyzer: For deep risk or pattern assessment.
 ✅ Validator (Verification Agent): This is the most critical agent for reliability. It compares the Writer's response against the original document chunks. If it detects information that isn't in the source (a hallucination), it triggers a Self-Correction Loop.
-3. The Workflow (Self-Correction Loop)
+III. The Workflow (Self-Correction Loop)
 The magic happens in the conditional logic of the graph:
 
 Safety Check: If unsafe → END (Return security block).
@@ -165,13 +165,13 @@ If Valid: → END (Return final answer).
 If Hallucination Detected: The Validator sends a critique back to the Writer, which tries again (up to 2 retries) to fix the error.
 
 ### 4. Multi Agent System
-1. Core Architecture (LangGraph Orchestration)
+I. Core Architecture (LangGraph Orchestration)
 The system is built on a directed acyclic graph (DAG) with conditional loops, managed by LangGraph. Unlike a standard linear chain, this architecture allows the system to make decisions, route tasks dynamically, and repeat steps if the quality isn't met.
 
 Nodes: Each node represents a specialized agent or function (Gatekeeper, Searcher, Writer, Validator).
 Edges: These define the "roads" between agents.
 Conditional Edges: Logic gates that decide where to go next based on the current state (e.g., "If hallucination detected, go back to Writer").
-2. State Management (AgentState)
+II. State Management (AgentState)
 The "brain" of the operation is the shared state. Every agent reads from and writes to this central dictionary, ensuring a single source of truth throughout the execution.
 
 python
@@ -183,7 +183,7 @@ class AgentState(TypedDict):
     critique: str              # Feedback for self-correction
     is_safe: bool              # Safety flag
     hallucination_retries: int # Counter to prevent infinite loops
-3. The Multi-Agent Operational Workflow
+III. The Multi-Agent Operational Workflow
 The framework executes in five distinct phases:
 
 Phase A: Security Gatekeeping
@@ -206,7 +206,7 @@ Success: If the answer is grounded, it routes to END.
 Failure: If it detects a hallucination, it writes a critique and increments hallucination_retries.
 Phase E: Self-Correction Loop
 Routing: If the validator fails and retries are under the limit (2), the graph loops back to the Writer Agent. The Writer now has the original context plus the Validator's specific feedback on what it got wrong.
-4. Tool Integration (MCP Principles)
+IV. Tool Integration (MCP Principles)
 Each agent doesn't perform "magic"; they invoke standardized tools from the MCP Tool Registry (backend/mcp/tools.py).
 
 Decoupling: The Agents handle the logic (when to do what), while the Tools handle the execution (how to talk to the DB or LLM).
