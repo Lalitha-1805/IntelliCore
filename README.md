@@ -187,7 +187,3 @@ IntelliCore provides distinct interfaces for employees and policy administrators
 IntelliCore represents a leap forward in enterprise knowledge accessibility. By combining the precision of **RAG**, the flexibility of the **Model Context Protocol**, and the reasoning power of **Llama 3.3**, it transforms static policy documents into a dynamic, interactive, and observable knowledge asset. It not only empowers employees with instant, accurate information but also provides administrators with the analytical tools needed to maintain a robust and comprehensive knowledge base.
 
 ---
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
